@@ -1,12 +1,10 @@
-import * as PIXI from 'pixi.js';
-
-export function setupRendering(gameData) {
-    const { stage } = gameData;
-
+function createScoreText() {
     const scoreText = new PIXI.Text('Score: 0', { fill: 0xffffff });
     scoreText.position.set(10, 10);
-    stage.addChild(scoreText);
+    return scoreText;
+}
 
+function createPauseButton(gameData) {
     const pauseButton = new PIXI.Text('Pause', { fill: 0xffffff });
     pauseButton.position.set(10, 40);
     pauseButton.interactive = true;
@@ -14,21 +12,39 @@ export function setupRendering(gameData) {
         gameData.isPaused = !gameData.isPaused;
         pauseButton.text = gameData.isPaused ? 'Resume' : 'Pause';
     });
-    stage.addChild(pauseButton);
+    return pauseButton;
+}
 
+function createTitleScreen(app) {
     const titleScreen = new PIXI.Container();
     const titleText = new PIXI.Text('Tile Matching Game', { fill: 0xffffff, fontSize: 36 });
     titleText.anchor.set(0.5);
-    titleText.position.set(gameData.app.view.width / 2, gameData.app.view.height / 2);
+    titleText.position.set(app.view.width / 2, app.view.height / 2);
     titleScreen.addChild(titleText);
+    return titleScreen;
+}
 
+function createGameEndScreen(app) {
     const gameEndScreen = new PIXI.Container();
     const endText = new PIXI.Text('Congratulations!\nYou Win!', { fill: 0xffffff, fontSize: 36 });
     endText.anchor.set(0.5);
-    endText.position.set(gameData.app.view.width / 2, gameData.app.view.height / 2);
+    endText.position.set(app.view.width / 2, app.view.height / 2);
     gameEndScreen.addChild(endText);
+    return gameEndScreen;
+}
 
-    return { scoreText, pauseButton, titleScreen, gameEndScreen };
+export function setupRendering(gameData) {
+    const { stage, app } = gameData;
+
+    const scoreText = createScoreText();
+    const pauseButton = createPauseButton(gameData);
+    const titleScreen = createTitleScreen(app);
+    const gameEndScreen = createGameEndScreen(app);
+
+    stage.addChild(scoreText);
+    stage.addChild(pauseButton);
+
+    return { scoreText, titleScreen, gameEndScreen };
 }
 
 export function render(gameData, renderingData) {

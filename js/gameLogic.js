@@ -1,20 +1,14 @@
-
 const GRID_WIDTH = 10;
 const GRID_HEIGHT = 20;
 const TILE_SIZE = 40;
 const MAX_LINES_ADDED = 100;
 
-
 export function initializeGame(app) {
     const stage = app.stage;
-
     const grid = createEmptyGrid();
-
     const tileSize = TILE_SIZE;
-    
     const colors = [0xFF0000, 0x00FF00, 0x0000FF];
-    
-    let selectedTiles = [];
+    const selectedTiles = [];
     let score = 0;
     let linesAdded = 0;
     let isPaused = false;
@@ -25,7 +19,6 @@ export function initializeGame(app) {
 function createEmptyGrid() {
     const gridWidth = GRID_WIDTH;
     const gridHeight = GRID_HEIGHT;
-
     const grid = [];
 
     for (let x = 0; x < gridWidth; x++) {
@@ -68,8 +61,7 @@ export function findMatches(gameData) {
         for (let y = 0; y < gridHeight; y++) {
             const color = grid[x][y];
             if (color !== null) {
-                const connectedTiles = [];
-                findConnectedTiles(x, y, color, connectedTiles, gameData);
+                const connectedTiles = findConnectedTiles(x, y, color, gameData);
                 if (connectedTiles.length >= 3) {
                     matchedTiles.push(...connectedTiles);
                 }
@@ -88,10 +80,7 @@ export function addRandomTile(gameData) {
 
     grid[x][gridHeight - 1] = color;
 
-    const tileSprite = new PIXI.Sprite(PIXI.Texture.WHITE);
-    tileSprite.tint = colors[color];
-    tileSprite.width = tileSize;
-    tileSprite.height = tileSize;
+    const tileSprite = createTileSprite(color, tileSize);
     tileSprite.position.set(x * tileSize, (gridHeight - 1) * tileSize);
     stage.addChild(tileSprite);
 
@@ -130,4 +119,12 @@ export function removeTiles(tilesToRemove, gameData) {
         stage.removeChildAt(y * gridWidth + x);
         grid[x][y] = null;
     }
+}
+
+function createTileSprite(color, tileSize) {
+    const tileSprite = new PIXI.Sprite(PIXI.Texture.WHITE);
+    tileSprite.tint = color;
+    tileSprite.width = tileSize;
+    tileSprite.height = tileSize;
+    return tileSprite;
 }

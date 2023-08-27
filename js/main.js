@@ -1,7 +1,25 @@
-import * as PIXI from 'pixi.js';
 import { initializeGame } from './gameLogic.js';
 import { setupRendering, render } from './rendering.js';
 import { setupInputHandling } from './inputHandling.js';
+
+class GameApp {
+    constructor(app) {
+        this.app = app;
+        this.gameData = initializeGame(app);
+        this.setupGame();
+    }
+
+    setupGame() {
+        setupRendering(this.gameData);
+        setupInputHandling(this.gameData);
+    }
+
+    setupGameLoop() {
+        this.app.ticker.add((delta) => {
+            render(this.gameData);
+        });
+    }
+}
 
 const app = new PIXI.Application({
     width: 800,
@@ -11,13 +29,4 @@ const app = new PIXI.Application({
 
 document.body.appendChild(app.view);
 
-const gameData = initializeGame(app);
-setupRendering(gameData);
-setupInputHandling(gameData);
-
-function gameLoop(delta) {
-    render(gameData);
-    requestAnimationFrame(gameLoop);
-}
-
-requestAnimationFrame(gameLoop);
+new GameApp(app);
