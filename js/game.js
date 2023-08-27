@@ -11,6 +11,7 @@ const stage = app.stage;
 const gridWidth = 10;
 const gridHeight = 20;
 const tileSize = 40;
+const colors = [0xFF0000, 0x00FF00, 0x0000FF];
 
 const grid = [];
 
@@ -20,6 +21,7 @@ for (let x = 0; x < gridWidth; x++) {
         grid[x][y] = null;
     }
 }
+
 
 function addRandomTile() {
     const x = Math.floor(Math.random() * gridWidth);
