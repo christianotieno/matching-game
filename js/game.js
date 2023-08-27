@@ -25,9 +25,16 @@ for (let x = 0; x < gridWidth; x++) {
 
 function addRandomTile() {
     const x = Math.floor(Math.random() * gridWidth);
-    const color = Math.floor(Math.random() * 3); 
+    const color = Math.floor(Math.random() * 3);
 
     grid[x][gridHeight - 1] = color;
+
+    const tileSprite = new PIXI.Sprite(PIXI.Texture.WHITE);
+    tileSprite.tint = colors[color];
+    tileSprite.width = tileSize;
+    tileSprite.height = tileSize;
+    tileSprite.position.set(x * tileSize, (gridHeight - 1) * tileSize);
+    stage.addChild(tileSprite);
 }
 
 setInterval(addRandomTile, 1000);
