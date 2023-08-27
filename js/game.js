@@ -47,22 +47,57 @@ function removeTiles(selectedTiles) {
     }
 }
 
-// Add event listener for clicks
+let selectedTiles = [];
+
 app.view.addEventListener('click', (event) => {
     const x = Math.floor(event.clientX / tileSize);
     const y = Math.floor(event.clientY / tileSize);
 
-    // Logic to find and remove matching tiles
+    if (grid[x][y] !== null) {
+        selectedTiles = [];
+        findConnectedTiles(x, y, grid[x][y]);
+        if (selectedTiles.length >= 3) {
+            removeTiles(selectedTiles);
+            applyGravity();
+        }
+    }
 });
 
+function findConnectedTiles(x, y, color) {
+    if (x < 0 || x >= gridWidth || y < 0 || y >= gridHeight) return;
+    if (grid[x][y] !== color || selectedTiles.some(tile => tile.x === x && tile.y === y)) return;
+
+    selectedTiles.push({ x, y });
+
+    findConnectedTiles(x + 1, y, color);
+    findConnectedTiles(x - 1, y, color);
+    findConnectedTiles(x, y + 1, color);
+    findConnectedTiles(x, y - 1, color);
+}
+
+function removeTiles(tilesToRemove) {
+    for (const tile of tilesToRemove) {
+        const { x, y } = tile;
+        stage.removeChildAt(y * gridWidth + x);
+        grid[x][y] = null;
+    }
+}
 
 function applyGravity() {
     for (let x = 0; x < gridWidth; x++) {
         for (let y = gridHeight - 1; y >= 0; y--) {
             if (grid[x][y] !== null) {
-                // Logic to make the tile fall
+                let fallDistance = 0;
+                while (y + fallDistance + 1 < gridHeight && grid[x][y + fallDistance + 1] === null) {
+                    fallDistance++;
+                }
+                if (fallDistance > 0) {
+                    grid[x][y + fallDistance] = grid[x][y];
+                    grid[x][y] = null;
+                    const tileSprite = stage.getChildAt(y * gridWidth + x);
+                    tileSprite.y += fallDistance * tileSize;
+                }
             }
         }
     }
 }
-
