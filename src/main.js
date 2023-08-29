@@ -1,5 +1,11 @@
 import * as PIXI from 'pixi.js';
 
+const TILE_COLORS_ARRAY = [
+    0xFF0000, // Red
+    0x00FF00, // Green
+    0x0000FF, // Blue
+];
+
 class GameApp {
     constructor() {
         this.app = new PIXI.Application({
@@ -22,8 +28,13 @@ class PlayScene {
     constructor(app) {
         this.app = app;
         this.tileSize = 50;
+        this.score = 0;
         this.gridWidth = Math.floor(app.screen.width / this.tileSize);
         this.gridHeight = Math.floor(app.screen.height / this.tileSize);
+
+        this.scoreText = new PIXI.Text(`Score: ${this.score}`, { fontSize: 24, fill: 0xFFFFFF });
+        this.scoreText.position.set(10, 10);
+        this.app.stage.addChild(this.scoreText);
 
         this.gameContainer = new PIXI.Container();
         this.tileGrid = Array.from({ length: this.gridHeight }, () => []);
@@ -46,10 +57,13 @@ class PlayScene {
     }
 
     addInitialRows() {
-        for (let row = 0; row < this.gridHeight; row++) {
+        const startRow = Math.floor(this.gridHeight / 2);
+        for (let row = startRow; row < this.gridHeight; row++) {
             this.addRandomRow(row);
         }
     }
+
+
 
 
     addRandomRow(row) {
@@ -60,7 +74,7 @@ class PlayScene {
             tile.x = col * this.tileSize;
             tile.y = row * this.tileSize;
             this.gameContainer.addChild(tile);
-            newRow.push({ sprite: tile, color: color, posY: row }); // Store the Y position
+            newRow.push({ sprite: tile, color: color, posY: row }); 
         }
         this.tileGrid[row] = newRow;
     }
@@ -152,15 +166,16 @@ class PlayScene {
         this.removeAdjacentTiles(row - 1, col, targetColor);
         this.removeAdjacentTiles(row, col + 1, targetColor);
         this.removeAdjacentTiles(row, col - 1, targetColor);
+
+        if (tile.visible === false) {
+            this.score += 10; 
+            this.updateScoreText(); 
+        }
+    }
+
+    updateScoreText() {
+        this.scoreText.text = `Score: ${this.score}`;
     }
 }
-
-
-const TILE_COLORS_ARRAY = [
-    0xFF0000, // Red
-    0x00FF00, // Green
-    0x0000FF, // Blue
-];
-
 
 const appInstance = new GameApp();
