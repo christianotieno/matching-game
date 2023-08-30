@@ -4,7 +4,7 @@
 git clone https://github.com/christianotieno/matching-game && cd matching-game
 
 ## Install Dependencies
-npm install -- install dependencies
+npm install
 
 ## Running the code
 npm run start
