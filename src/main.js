@@ -12,6 +12,7 @@ class GameApp {
             width: 800,
             height: 600,
             backgroundColor: 0xAAAAAA,
+            antialias: true,
         });
 
         document.body.appendChild(this.app.view);
@@ -54,6 +55,8 @@ class PlayScene {
         this.gameContainer = new PIXI.Container();
         this.tileGrid = Array.from({ length: this.gridHeight }, () => []);
 
+        this.tileSpacing = 0;
+
         this.app.stage.addChild(this.gameContainer);
 
         this.addInitialRows();
@@ -61,6 +64,7 @@ class PlayScene {
         this.gameContainer.interactive = true;
         this.gameContainer.on('click', this.onClick.bind(this));
     }
+
 
     updateTimer() {
         this.playTime++;
@@ -109,8 +113,8 @@ class PlayScene {
         this.isPaused = false;
         this.startButton.visible = false;
         this.restartButton.visible = false;
-        this.pauseButton.visible = true; 
-        this.endButton.visible = true; 
+        this.pauseButton.visible = true;
+        this.endButton.visible = true;
 
         this.playTime = 0;
         this.timerInterval = setInterval(() => this.updateTimer(), 1000); 
@@ -121,12 +125,26 @@ class PlayScene {
 
     togglePause() {
         this.isPaused = !this.isPaused;
+
+        if (this.isPaused) {
+            this.pauseButton.visible = false;
+            this.endButton.visible = false;
+            this.restartButton.visible = false;
+
+            const resumeButton = this.createButton("Resume", 10, 100);
+            resumeButton.on("pointerdown", () => this.handleButtonClick("Resume"));
+            this.app.stage.addChild(resumeButton);
+        } else {
+            this.pauseButton.visible = true;
+            this.endButton.visible = true;
+            this.restartButton.visible = false;
+        }
     }
 
     restartGame() {
-        this.isPaused = false; 
-        this.gameOver = false; 
-        this.playTime = 0; 
+        this.isPaused = false;
+        this.gameOver = false;
+        this.playTime = 0;
 
         this.restartButton.visible = false;
 
@@ -140,7 +158,6 @@ class PlayScene {
         this.gameOver = true;
         this.isPaused = true;
         
-  
         this.pauseButton.visible = false;
         this.endButton.visible = false;
 
@@ -156,23 +173,32 @@ class PlayScene {
 
     addInitialRows() {
         const startRow = Math.floor(this.gridHeight / 2);
+
+        for (let row = 0; row < startRow; row++) {
+            this.tileGrid[row] = [];
+        }
+
         for (let row = startRow; row < this.gridHeight; row++) {
             this.addRandomRow(row);
         }
     }
+
+
 
     addRandomRow(row) {
         const newRow = [];
         for (let col = 0; col < this.gridWidth; col++) {
             const color = TILE_COLORS_ARRAY[Math.floor(Math.random() * TILE_COLORS_ARRAY.length)];
             const tile = this.createTile(color);
-            tile.x = col * this.tileSize;
-            tile.y = row * this.tileSize;
+            tile.x = (col * this.tileSize) + (col * this.tileSpacing);
+            tile.y = (row * this.tileSize) + (row * this.tileSpacing);
             this.gameContainer.addChild(tile);
             newRow.push({ sprite: tile, color: color, posY: row }); 
         }
+        
         this.tileGrid[row] = newRow;
     }
+
 
     onClick(event) {
         const { x, y } = event.data.global;
@@ -180,13 +206,19 @@ class PlayScene {
         const row = Math.floor(y / this.tileSize);
 
         if (row >= 0 && row < this.gridHeight && col >= 0 && col < this.gridWidth) {
-            const targetColor = this.tileGrid[row][col].color;
-            if (targetColor !== undefined && targetColor !== -1) {
-                this.removeAdjacentTiles(row, col, targetColor);
+            const targetTile = this.tileGrid[row][col];
+
+            if (targetTile && targetTile.color !== undefined && targetTile.color !== -1) {
+                this.removeAdjacentTiles(row, col, targetTile.color);
                 this.clearColumns();
+            } else {
+                console.log("Clicked on an invalid tile:", targetTile);
             }
+        } else {
+            console.log("Clicked outside the grid bounds:", row, col);
         }
     }
+
 
     clearColumns() {
         const tilesToFall = [];
@@ -214,44 +246,59 @@ class PlayScene {
     animateTilesFalling(tilesToFall) {
         const fallingSpeed = 5;
         const tileSize = this.tileSize;
-        let framesPassed = 0;
 
-        const animation = () => {
-            if (framesPassed >= tileSize / fallingSpeed) {
-                this.app.ticker.remove(animation);
-
-                // After falling animation is complete, update the tileGrid with new positions
-                tilesToFall.forEach((column, col) => {
-                    column.forEach(({ tile, originalRow }) => {
-                        const newRow = originalRow + column.length;
-                        const newY = newRow * tileSize;
-                        tile.y = newY;
-                        this.tileGrid[newRow][col] = { sprite: tile, color: tile.color, posY: newRow };
-                    });
-                });
-            }
+        const animation = (delta) => {
+            let allTilesLanded = true;
 
             tilesToFall.forEach((column, col) => {
                 column.forEach(({ tile, originalRow }) => {
-                    if (framesPassed >= (this.gridHeight - originalRow) * tileSize / fallingSpeed) {
-                        const newY = (originalRow + column.length) * tileSize;
-                        tile.y = newY - (this.gridHeight - originalRow) * tileSize + framesPassed * fallingSpeed;
+                    const newRow = originalRow + column.length;
+                    const newY = newRow * tileSize;
+
+                    if (tile.y < newY) {
+                        const distanceToMove = fallingSpeed * delta;
+                        tile.y += distanceToMove;
+
+                        if (tile.y >= newY) {
+                            tile.y = newY; 
+                        }
+
+                        allTilesLanded = false;
                     }
                 });
             });
 
-            framesPassed++;
+            if (allTilesLanded) {
+                this.app.ticker.remove(animation);
+                tilesToFall.forEach((column, col) => {
+                    column.forEach(({ tile, originalRow }) => {
+                        const newRow = originalRow + column.length;
+                        tile.y = newRow * tileSize;
+                        tile.x = col * tileSize + col * this.tileSpacing;
+                        this.tileGrid[newRow][col] = { sprite: tile, color: tile.color, posY: newRow };
+                    });
+                });
+            }
         };
 
         this.app.ticker.add(animation);
     }
+
 
     removeAdjacentTiles(row, col, targetColor) {
         if (row < 0 || row >= this.gridHeight || col < 0 || col >= this.gridWidth || this.tileGrid[row][col].color !== targetColor) {
             return;
         }
 
+        console.log(row);
+        console.log(col);
         const tile = this.tileGrid[row][col].sprite;
+        console.log(tile);
+
+        if (!tile.visible) {
+            return; 
+        }
+
         tile.visible = false;
         this.tileGrid[row][col].color = -1;
 
@@ -260,11 +307,10 @@ class PlayScene {
         this.removeAdjacentTiles(row, col + 1, targetColor);
         this.removeAdjacentTiles(row, col - 1, targetColor);
 
-        if (tile.visible === false) {
-            this.score += 10; 
-            this.updateScoreText(); 
-        }
+        this.score += 10;
+        this.updateScoreText();
     }
+
 
     updateScoreText() {
         this.scoreText.text = `Score: ${this.score}`;
